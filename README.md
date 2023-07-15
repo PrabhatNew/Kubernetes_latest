@@ -46,7 +46,7 @@ This repository contains Ansible playbooks and Bash scripts to set up a Kubernet
 
 6. Verify that the `hosts.ini` file was created and contains the correct information:
    ````sh
-   cat /Kubernetes/ansible/hosts.ini
+   cat /Kubernetes_latest/ansible/hosts.ini
    
 
 7. Copy the SSH public key from the Ansible control node to all other nodes in the cluster using the `ssh-copy-id` command:
@@ -57,7 +57,7 @@ This repository contains Ansible playbooks and Bash scripts to set up a Kubernet
    
    Alternatively, you can use the `ssh-copy-id_automated.sh` script to automate this process:
   
-   cd Kubernetes/bash_files
+   cd Kubernetes_latest/bash_files
    bash ssh-copy-id_automated.sh
    
 
@@ -66,7 +66,7 @@ To use the scripts in this repository, follow these steps:
 
 1. Test the Ansible connection to all hosts using the following command:
    ````sh
-   cd /Kubernetes/ansible
+   cd /Kubernetes_latest/ansible
    ansible all -m ping -i hosts.ini 
    
 
@@ -78,17 +78,9 @@ To use the scripts in this repository, follow these steps:
    
 
 3. To execute playbooks individually, run the following commands:
-   - To install Keepalived and HAProxy:
+   - To install and configure Keepalived, HAProxy:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/install_haproxy_keepalived.yml
-     ```
-   - To configure Keepalived:
-     ```sh
-     ansible-playbook -i hosts.ini playbooks/configure_keepalived.yml
-     ```
-   - To configure HAproxy:
-     ```sh
-     ansible-playbook -i hosts.ini playbooks/configure_haproxy.yml
+     ansible-playbook -i hosts.ini playbooks/install_configure_loadbalancer.yml
      ```
    - To install Kubernetes:
      ```sh
@@ -108,35 +100,8 @@ To use the scripts in this repository, follow these steps:
      ```
    - To install Rancher:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/rancher_setup.yml 
+     ansible-playbook -i hosts.ini playbooks/rancher_setup_updated.yml 
      ```
-
-## Examples
-Here are some examples of how to use the playbook for different scenarios:
-
-- **Setting up a Kubernetes cluster with three nodes:** Assume you have three nodes with the following IP addresses: `192.168.101.109`, `192.168.101.110`, and `192.168.101.111`. Run the following commands to set up the cluster:
-
-  ````sh
-  sudo git clone https://github.com/PrabhatNew/Kubernetes.git
-  cd Kubernetes
-  sudo chmod +x -R bash_files
-  cd bash_files
-  bash on_all_nodes.sh
-  sudo bash hosts.ini.sh
-  cat /Kubernetes/ansible/hosts.ini
-  ssh-copy-id desk@192.168.101.109
-  ssh-copy-id desk@192.168.101.110
-  ssh-copy-id desk@192.168.101.111
-  cd /Kubernetes/ansible
-  ansible all -m ping -i hosts.ini 
-  ansible-playbook -i hosts.ini mainplaybook.yml 
-  
-
-- **Joining additional worker nodes to an existing Kubernetes cluster:** Assume you have an existing Kubernetes cluster, and you want to add two more worker nodes with the following IP addresses: `192.168.101.112` and `192.168.101.113`. Run the following commands to add the worker nodes:
-
-  ````sh
-  cd /Kubernetes/ansible
-  ansible-playbook -i hosts.ini playbooks/join_worker.yml --extra-vars "node_ips=192.168.101.112,192.168.101.113"
   
 
 ## Troubleshooting
