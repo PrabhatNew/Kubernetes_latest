@@ -1,0 +1,66 @@
+- name: Extract ingress-nginx-controller ports
+  hosts: master[0]
+  gather_facts: false
+  tasks:
+    - name: Install Helm
+      command: sudo snap install helm --classic
+
+    - name: Add Helm repository
+      ansible.builtin.command: helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      changed_when: false
+
+    - name: Update Helm repositories
+      ansible.builtin.command: helm repo update
+      changed_when: false
+
+    # - name: Create ingress-controller Namespace
+    #   command: kubectl create namespace ingress-controller
+
+    - name: Deploy Ingress Nginx controller
+      ansible.builtin.command: helm upgrade --install ingress-nginx ingress-nginx   --repo https://kubernetes.github.io/ingress-nginx   --namespace ingress-nginx --create-namespace  --set rbac.create=true --set controller.service.type=NodePort --set controller.metrics.enabled=true --set controller.stats.enabled=true
+      register: helm_result
+      changed_when: helm_result.stdout != ""
+
+    - name: Verify installation
+      ansible.builtin.command: kubectl get pods -n ingress-nginx
+      changed_when: false
+      when: inventory_hostname == groups['master'][0]
+
+    - name: Extract ingress-nginx-controller ports
+      ansible.builtin.command: kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort},{.spec.ports[?(@.name=="https")].nodePort}'
+      register: ingress_nginx_controller_ports
+      changed_when: false
+      when: inventory_hostname == groups['master'][0]
+
+    - name: Split ingress-nginx-controller ports
+      ansible.builtin.set_fact:
+        ingress_nginx_controller_port_80: "{{ hostvars[groups['master'][0]]['ingress_nginx_controller_ports']['stdout'].split(',')[0] }}"
+        ingress_nginx_controller_port_443: "{{ hostvars[groups['master'][0]]['ingress_nginx_controller_ports']['stdout'].split(',')[1] }}"
+
+    - name: Save facts to another host
+      ansible.builtin.add_host:
+        name: loadbalancer
+        ansible_user: "{{ hostvars[(groups['loadbalancer'][0])]['ansible_user'] }}"
+        ansible_host: "{{ hostvars[(groups['loadbalancer'][0])]['ansible_host'] }}"
+        ingress_nginx_controller_port_80: "{{ hostvars[groups['master'][0]]['ingress_nginx_controller_port_80'] }}"
+        ingress_nginx_controller_port_443: "{{ hostvars[groups['master'][0]]['ingress_nginx_controller_port_443'] }}"
+      delegate_to: localhost
+
+- name: Generate HAProxy configuration
+  hosts: loadbalancer
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Render HAProxy configuration template
+      ansible.builtin.template:
+        src: "templates/haproxy.cfg.j2"
+        dest: "/etc/haproxy/haproxy.cfg"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+      notify: Restart haproxy
+  handlers:
+    - name: Restart haproxy
+      ansible.builtin.systemd:
+        name: haproxy
+        state: restarted

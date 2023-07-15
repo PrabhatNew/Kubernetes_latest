@@ -61,7 +61,7 @@
     - name: Mount NFS share
       mount:
         path: /mnt/rancher-volume
-        src: "{{ NFS_SERVER }}:{{ NFS_PATH }}/rancher-volume"
+        src: "{{ NFS_SERVER_IP }}:{{ NFS_PATH }}/rancher-volume"
         fstype: nfs
         opts: "rw,hard,intr"
 

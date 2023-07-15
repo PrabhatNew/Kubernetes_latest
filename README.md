@@ -13,6 +13,7 @@ This repository contains Ansible playbooks and Bash scripts to set up a Kubernet
 ## Requirements
 - Ubuntu 22.04
 - Ansible 2.9+
+- Update 04-vars.yml file for the kubernetes version you want to install.
 - The ansible control node (where you'll run the Ansible commands) must be able to SSH to all the nodes without a password. This can be done by generating SSH keys and copying the public key to all the nodes.
 
 ## Installation
@@ -97,6 +98,14 @@ To use the scripts in this repository, follow these steps:
    - To join the master nodes to the Kubernetes cluster:
      ```sh
      ansible-playbook -i hosts.ini playbooks/join_master.yml 
+     ```
+   - To install nginx ingress controller and helm to the Kubernetes cluster:
+     ```sh
+     ansible-playbook -i hosts.ini playbooks/install_ingcontroller_helm.yml 
+     ```
+   - To update haproxy_conf file with ingress controller ports:
+     ```sh
+     ansible-playbook -i hosts.ini playbooks/update_HA_conf.yml 
      ```
    - To install Rancher:
      ```sh

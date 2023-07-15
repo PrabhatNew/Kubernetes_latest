@@ -1,0 +1,59 @@
+---
+- name: Extract ingress-nginx-controller ports
+  hosts: master
+  gather_facts: false
+  tasks:
+    - name: Get ingress-nginx-controller ports
+      ansible.builtin.command: kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort},{.spec.ports[?(@.name=="https")].nodePort}'
+      register: ingress_nginx_controller_ports
+      changed_when: false
+
+    - name: Split ingress-nginx-controller ports
+      set_fact:
+        ingress_nginx_controller_port_80: "{{ ingress_nginx_controller_ports.stdout.split(',')[0] }}"
+        ingress_nginx_controller_port_443: "{{ ingress_nginx_controller_ports.stdout.split(',')[1] }}"
+
+    - name: Save facts to load balancer group
+      add_host:
+        name: loadbalancer
+        ansible_user: "{{ hostvars[groups['loadbalancer'][0]]['ansible_user'] }}"
+        ansible_host: "{{ hostvars[groups['loadbalancer'][0]]['ansible_host'] }}"
+        ingress_nginx_controller_port_80: "{{ ingress_nginx_controller_port_80 }}"
+        ingress_nginx_controller_port_443: "{{ ingress_nginx_controller_port_443 }}"
+      delegate_to: localhost
+
+- name: Configure haproxy
+  hosts: loadbalancer
+  become: true
+  tasks:
+    - name: Add http block to haproxy.conf
+      lineinfile:
+        path: /etc/haproxy/haproxy.conf
+        insertafter: EOF
+        line: |
+          listen http
+            bind *:{{ hostvars['loadbalancer']['ingress_nginx_controller_port_80'] }}
+            {% for host in groups['master'] + groups['worker'] %}
+            server {{ host }} {{ hostvars[host]['ansible_host'] }}:{{ hostvars['loadbalancer']['ingress_nginx_controller_port_80'] }}
+            {% endfor %}
+
+    - name: Add https block to haproxy.conf
+      lineinfile:
+        path: /etc/haproxy/haproxy.conf
+        insertafter: EOF
+        line: |
+          listen https
+            bind *:{{ hostvars['loadbalancer']['ingress_nginx_controller_port_443'] }}
+            {% for host in groups['master'] + groups['worker'] %}
+            server {{ host }} {{ hostvars[host]['ansible_host'] }}:{{ hostvars['loadbalancer']['ingress_nginx_controller_port_443'] }}
+            {% endfor %}
+
+    - name: Add stats block to haproxy.conf
+      lineinfile:
+        path: /etc/haproxy/haproxy.conf
+        insertafter: EOF
+        line: |
+          listen stats
+            mode http
+            bind *:5000
+            stats enable
