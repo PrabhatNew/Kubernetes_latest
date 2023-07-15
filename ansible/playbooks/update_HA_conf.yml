@@ -1,6 +1,6 @@
 ---
 - name: Extract ingress-nginx-controller ports
-  hosts: master
+  hosts: master[0]
   gather_facts: false
   tasks:
     - name: Get ingress-nginx-controller ports
@@ -57,3 +57,9 @@
             mode http
             bind *:5000
             stats enable
+            
+    handlers:
+    - name: Restart haproxy
+      ansible.builtin.systemd:
+        name: haproxy
+        state: restarted
