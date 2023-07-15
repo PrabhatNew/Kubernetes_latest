@@ -46,9 +46,9 @@
     - name: Install docker-compose from official github repo
       remote_user: ansible_ubuntu_demo
       get_url:
-       url : https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64
-       dest: /usr/local/bin/docker-compose
-       mode: 'u+x,g+x'
+        url: https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: 'u+x,g+x'
 
     - name: Install NFS client
       apt:
@@ -57,13 +57,13 @@
 
     - name: Create mount point
       file:
-        path: /mnt/rancher-volume
+        path: /etc/rancher_data
         state: directory
 
     - name: Mount NFS share
       mount:
-        path: /mnt/rancher-volume
-        src: "{{ NFS_SERVER_IP }}:{{ NFS_PATH }}/rancher-volume"
+        path: /etc/rancher_data
+        src: "{{ NFS_SERVER_IP }}:{{ NFS_PATH }}/etc/rancher_data"
         fstype: nfs
         opts: "rw,hard,intr"
 
@@ -78,9 +78,9 @@
               volumes:
                 - /etc/ssl/certs/STAR.vianet.com.np.crt:/etc/rancher/ssl/cert.pem
                 - /etc/ssl/certs/STAR.vianet.com.np.key:/etc/rancher/ssl/key.pem
-                - type: volume
-                  source: rancher-volume
-                  target: /var/lib/rancher
+                - /etc/rancher_data:/var/lib/rancher
+                - type: bind
+                  source: /etc/rancher_data
               environment:
                 - CATTLE_BOOTSTRAP_PASSWORD=1234567890
               ports:
@@ -90,13 +90,9 @@
               privileged: true
               command: --no-cacerts
           volumes:
-            rancher-volume:
+            rancher_volume:
               driver: local
-              driver_opts:
-                type: volume
-                o: "bind,rw"
-                device: "/mnt/rancher-volume"
-        dest: /etc/docker-compose.yml
+            dest: /etc/docker-compose.yml
 
     - name: Start docker-compose service for Rancher
       command: sudo docker compose -f /etc/docker-compose.yml up -d
