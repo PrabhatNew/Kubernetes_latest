@@ -1,0 +1,21 @@
+- hosts: all
+  become: yes
+  tags: automate
+  tasks:
+- name: Install and configure HAproxy, Keepalived
+  import_playbook: playbooks/install_configure_loadbalancer.yml
+
+- name: Install Kubernetes
+  import_playbook: playbooks/install_kubernetes.yml
+
+- name: Initialize Kubernetes on first master
+  import_playbook: playbooks/init_kubernetes.yml
+
+- name: Join the worker nodes
+  import_playbook: playbooks/join_worker.yml
+
+- name: Join the master nodes
+  import_playbook: playbooks/join_master.yml
+
+- name: Install Rancher
+  import_playbook: playbooks/rancher_setup_updated.yml

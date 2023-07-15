@@ -1,0 +1,144 @@
+---
+- hosts: loadbalancer
+  become: yes
+  vars_files:
+    - 04-vars.yml
+  tasks:
+    - name: check_apiserver
+      copy:
+        dest: "/etc/keepalived/check_apiserver.sh"
+        content: |
+          #!/bin/sh
+
+          errorExit() {
+            echo "*** $@" 1>&2
+            exit 1
+          }
+
+          curl --silent --max-time 2 --insecure https://localhost:6443/ -o /dev/null || errorExit "Error GET https://localhost:6443/"
+          if ip addr | grep -q {{ hostvars[groups['floating_ip'][0]]['ansible_host'] }}; then
+            curl --silent --max-time 2 --insecure https://{{ hostvars[groups['floating_ip'][0]]['ansible_host'] }}:6443/ -o /dev/null || errorExit "Error GET https://{{ hostvars[groups['floating_ip'][0]]['ansible_host'] }}:6443/"
+          fi
+
+    - name: make script executable
+      become: yes
+      shell: chmod +x /etc/keepalived/check_apiserver.sh
+
+    - name: haproxy
+      copy:
+        dest: "/etc/haproxy/haproxy.cfg"
+        content: |
+          global
+            maxconn 50000
+            log /dev/log local0
+            user haproxy
+            group haproxy
+           stats socket /var/lib/haproxy/stats
+          
+          defaults
+            log global
+            timeout connect 10s
+            timeout client 30s
+            timeout server 30s
+
+          frontend kubernetes-frontend
+            bind *:6443
+            mode tcp
+            option tcplog
+            default_backend kubernetes-backend
+          
+          backend kubernetes-backend
+            option httpchk GET /healthz
+            http-check expect status 200
+            mode tcp
+            option ssl-hello-chk
+            balance roundrobin
+          {% for host in groups['master'] %}
+            server master{{ loop.index }} {{ hostvars[host]['ansible_host'] }}:6443 check fall 3 rise 2
+          {% endfor %}
+
+- hosts: loadbalancer[0]
+  become: yes
+  vars_files:
+    - 04-vars.yml
+  tasks:
+    - name: keepalived
+      copy:
+        dest: "/etc/keepalived/keepalived.conf"
+        content: |
+          vrrp_script check_apiserver {
+            script "/etc/keepalived/check_apiserver.sh"
+            interval 3
+            timeout 10
+            fall 5
+            rise 2
+            weight -2
+          }
+          
+          vrrp_instance VI_1 {
+              state MASTER
+              interface eth1
+              virtual_router_id 1
+              priority 101
+              advert_int 5
+              authentication {
+                  auth_type PASS
+                  auth_pass {{ PASSWORD_KEEPALIVED }}
+              }
+              virtual_ipaddress {
+                  192.168.101.140
+              }
+              track_script {
+                  check_apiserver
+              }
+          }
+
+- hosts: loadbalancer[1]
+  become: yes
+  vars_files:
+    - 04-vars.yml
+  tasks:
+    - name: keepalived
+      copy:
+        dest: "/etc/keepalived/keepalived.conf"
+        content: |
+          vrrp_script check_apiserver {
+            script "/etc/keepalived/check_apiserver.sh"
+            interval 3
+            timeout 10
+            fall 5
+            rise 2
+            weight 2
+          }
+
+          vrrp_instance VI_1 {
+              state BACKUP
+              interface eth1
+              virtual_router_id 1
+              priority 100
+              advert_int 5
+              authentication {
+                  auth_type PASS
+                  auth_pass {{ PASSWORD_KEEPALIVED }}
+              }
+              virtual_ipaddress {
+                  192.168.101.140
+              }
+              track_script {
+                  check_apiserver
+              }
+          }
+
+
+- hosts: loadbalancer
+  become: yes
+  tasks:
+    - name: keepalived services
+      ansible.builtin.systemd:
+        state: restarted
+        name: keepalived
+
+    - name: haproxy services
+      ansible.builtin.systemd:
+        state: restarted
+        name: haproxy

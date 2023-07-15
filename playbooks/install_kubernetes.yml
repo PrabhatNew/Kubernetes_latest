@@ -1,0 +1,145 @@
+---
+- hosts: master,worker
+  become: yes
+  vars_files:
+    - 04-vars.yml
+  tasks:
+    - name: Disable swap
+      become: yes
+      shell: swapoff -a
+
+    - name: Disable SWAP in fstab since kubernetes can't work with swap enabled
+      replace:
+        path: /etc/fstab
+        regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+        replace: '# \1'
+
+    - name: Disable firewall
+      when: ansible_facts['os_family'] == "Debian"
+      shell: |
+        STATUS="$(systemctl is-active ufw.service)"
+        if [ "${STATUS}" = "active" ]; then
+          systemctl stop --now ufw >/dev/null 2>&1
+          systemctl disable --now ufw >/dev/null 2>&1
+        fi
+
+    - name: bridge network
+      copy:
+        dest: "/etc/modules-load.d/containerd.conf"
+        content: |
+          overlay
+          br_netfilter
+
+    - name: forward ipv4 traffic
+      copy:
+        dest: "/etc/sysctl.d/kubernetes.conf"
+        content: |
+          net.bridge.bridge-nf-call-iptables  = 1
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.ipv4.ip_forward                 = 1
+
+    - name: apply bridge network
+      become: yes
+      shell: modprobe overlay && modprobe br_netfilter && sysctl --system
+
+    - name: For releases older than Debian 12 and Ubuntu 22.04
+      become: yes
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: 0755
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install containerd dependencies
+      apt:
+        update_cache: yes
+        name:
+          - curl
+          - gnupg2
+          - software-properties-common
+          - apt-transport-https
+          - ca-certificates
+
+    - name: Execute command to import Docker GPG key  
+      ansible.builtin.apt_key:  
+          keyring: /etc/apt/trusted.gpg.d/docker.gpg
+          state: present 
+          url: https://download.docker.com/linux/ubuntu/gpg
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+    - name: Install containerd
+      apt:
+        update_cache: yes
+        name: containerd.io
+        state: present
+
+    - name: Tell containerd to use systemd
+      shell: |
+        mkdir -p /etc/containerd && \
+        containerd config default > /etc/containerd/config.toml && \
+        sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
+
+    - name: containerd service
+      ansible.builtin.systemd:
+        state: restarted
+        name: containerd
+
+    - name: add Kubernetes apt-key
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+
+    - name: add Kubernetes' APT repository
+      apt_repository:
+        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        state: present
+        filename: 'kubernetes'
+
+    - name: update repo
+      apt:
+        update_cache: yes
+        force_apt_get: yes
+        cache_valid_time: 3600
+
+    - debug: msg={{ K8S_VERSION }}
+
+    - name: install kubelet
+      apt:
+        name: kubelet={{ K8S_VERSION }}
+        state: present
+        update_cache: true
+
+    - name: install kubeadm
+      apt:
+        name: kubeadm={{ K8S_VERSION }}
+        state: present
+        update_cache: true
+
+    - name: Hold versions
+      shell: apt-mark hold kubelet={{ K8S_VERSION }} kubeadm={{ K8S_VERSION }}
+
+
+- hosts: master
+  become: yes
+  vars_files:
+    - 04-vars.yml
+  tasks:
+    - name: install kubectl
+      apt:
+        name: kubectl={{ K8S_VERSION }}
+        state: present
+        update_cache: true
+        allow_downgrade: true
+
+    - name: Hold versions
+      shell: apt-mark hold kubectl={{ K8S_VERSION }}
+
+#    - name: Pre-download images
+#     The important change here is the addition ofthe `vars_files` option at the beginning of each play, which specifies the path to the variables file (`04-vars.yml`). With this change, Ansible should be able to read the `K8S_VERSION` variable from your file without any issues.

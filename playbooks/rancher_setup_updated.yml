@@ -1,0 +1,100 @@
+- hosts: rancher
+  become: true
+
+  tasks:
+    - name: Install aptitude
+      apt:
+        name: aptitude
+        state: latest
+        update_cache: true
+
+    - name: Install required system packages
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+        state: latest
+        update_cache: true
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu jammy stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt:
+        name: docker-ce
+        state: latest
+        update_cache: true
+
+    - name: Install Docker Module for Python
+      pip:
+        name: docker
+
+    - name: Install docker-compose from official github repo
+      remote_user: ansible_ubuntu_demo
+      get_url:
+       url : https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64
+       dest: /usr/local/bin/docker-compose
+       mode: 'u+x,g+x'
+
+    - name: Install NFS client
+      apt:
+        name: nfs-common
+        state: latest
+
+    - name: Create mount point
+      file:
+        path: /mnt/rancher-volume
+        state: directory
+
+    - name: Mount NFS share
+      mount:
+        path: /mnt/rancher-volume
+        src: "{{ NFS_SERVER }}:{{ NFS_PATH }}/rancher-volume"
+        fstype: nfs
+        opts: "rw,hard,intr"
+
+    - name: Define docker-compose service for Rancher
+      copy:
+        content: |
+          version: '2.2'
+          services:
+            vianet-rancher:
+              image: rancher/rancher:latest
+              container_name: vianet-rancher
+              volumes:
+                - /etc/ssl/certs/STAR.vianet.com.np.crt:/etc/rancher/ssl/cert.pem
+                - /etc/ssl/certs/STAR.vianet.com.np.key:/etc/rancher/ssl/key.pem
+                - type: volume
+                  source: rancher-volume
+                  target: /var/lib/rancher
+              environment:
+                - CATTLE_BOOTSTRAP_PASSWORD=1234567890
+              ports:
+                - 80:80
+                - 443:443
+              restart: unless-stopped
+              privileged: true
+              command: --no-cacerts
+          volumes:
+            rancher-volume:
+              driver: local
+              driver_opts:
+                type: volume
+                o: "bind,rw"
+                device: "/mnt/rancher-volume"
+        dest: /etc/docker-compose.yml
+
+    - name: Start docker-compose service for Rancher
+      command: sudo docker compose -f /etc/docker-compose.yml up -d
