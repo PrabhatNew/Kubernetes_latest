@@ -86,7 +86,7 @@
                   auth_pass {{ PASSWORD_KEEPALIVED }}
               }
               virtual_ipaddress {
-                  192.168.101.140
+                  {{ hostvars[groups['floating_ip'][0]]['ansible_host'] }}
               }
               track_script {
                   check_apiserver
@@ -122,7 +122,7 @@
                   auth_pass {{ PASSWORD_KEEPALIVED }}
               }
               virtual_ipaddress {
-                  192.168.101.140
+                  {{ hostvars[groups['floating_ip'][0]]['ansible_host'] }}
               }
               track_script {
                   check_apiserver
