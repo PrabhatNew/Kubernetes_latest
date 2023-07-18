@@ -35,12 +35,3 @@ echo "Getting the service information for Vault server..."
 kubectl get svc -n vault
 echo "Service information displayed."
 
-# Define variables
-PVC_NAMES=("data-vault-0" "data-vault-1")
-STORAGE_CLASS_NAME="managed-nfs-storage"
-
-# Loop through the PVC names and edit each PVC
-for PVC_NAME in "${PVC_NAMES[@]}"
-do
-  kubectl patch pvc ${PVC_NAME} --type json -p '[{"op": "add", "path": "/spec/storageClassName", "value":"'${STORAGE_CLASS_NAME}'"}]'
-done
