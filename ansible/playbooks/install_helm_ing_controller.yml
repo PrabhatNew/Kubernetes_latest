@@ -17,9 +17,7 @@
     #   command: kubectl create namespace ingress-controller
 
     - name: Deploy Ingress Nginx controller
-      ansible.builtin.command: helm upgrade --install ingress-nginx ingress-nginx   --repo https://kubernetes.github.io/ingress-nginx   --namespace ingress-nginx --create-namespace  --set rbac.create=true --set controller.service.type=NodePort --set controller.metrics.enabled=true --set controller.stats.enabled=true
-      register: helm_result
-      changed_when: helm_result.stdout != ""
+      command: helm upgrade --install ingress-nginx ingress-nginx   --repo https://kubernetes.github.io/ingress-nginx   --namespace ingress-nginx --create-namespace  --set rbac.create=true --set controller.service.type=NodePort --set controller.metrics.enabled=true --set controller.stats.enabled=true
 
     - name: Verify installation
       ansible.builtin.command: kubectl get pods -n ingress-nginx
