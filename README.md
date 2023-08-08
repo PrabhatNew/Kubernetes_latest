@@ -79,9 +79,13 @@ To use the scripts in this repository, follow these steps:
    
 
 3. To execute playbooks individually, run the following commands:
-   - To install and configure Keepalived, HAProxy:
+   - To install  HAProxy, Keepalived:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/install_configure_loadbalancer.yml
+     ansible-playbook -i hosts.ini playbooks/install_haproxy_keepalived.yml
+     ```
+   - To Configure HAProxy, Keepalived:
+     ```sh
+     ansible-playbook -i hosts.ini playbooks/configure_loadbalancer.yml
      ```
    - To install Kubernetes:
      ```sh

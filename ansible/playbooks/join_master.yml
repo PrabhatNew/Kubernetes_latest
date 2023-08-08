@@ -8,13 +8,9 @@
     shell: "echo $(kubeadm token create --print-join-command) --control-plane --certificate-key $(kubeadm init phase upload-certs --upload-certs | grep -vw -e certificate -e Namespace) 2>&1"
     register: master_join_token
 
-  - name: Set fact for Master Join Token
-    set_fact:
-    master_join_command: "{{ master_join_token.stdout_lines[0] }}"
-
   - name: Print Master Join Token
     debug:
-    var: master_join_command
+      var: master_join_token.stdout_lines[0]
 
 - name: Execute Master Join Command on Master nodes except first master
   hosts: master[1:]
@@ -24,7 +20,7 @@
 
   - name: Print Master Join Command
     debug:
-    var: hostvars[groups['master'][0]]['master_join_command']
+      var: hostvars[groups['master'][0]]['master_join_token']
 
   - name: Join Master Node to Cluster
-    shell: "{{ hostvars[groups['master'][0]]['master_join_command'] }}"
+    shell: "{{ hostvars[groups['master'][0]]['master_join_token'] }}"
