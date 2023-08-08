@@ -105,7 +105,7 @@ To use the scripts in this repository, follow these steps:
      ```
    - To install nginx ingress controller and helm to the Kubernetes cluster:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/install_ingcontroller_helm.yml 
+     ansible-playbook -i hosts.ini playbooks/install_helm_ing_controller.yml 
      ```
    - To update haproxy_conf file with ingress controller ports:
      ```sh

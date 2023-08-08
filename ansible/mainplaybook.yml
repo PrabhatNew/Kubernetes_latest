@@ -2,8 +2,11 @@
   become: yes
   tags: automate
   tasks:
-- name: Install and configure HAproxy, Keepalived
-  import_playbook: playbooks/install_configure_loadbalancer.yml
+- name: Install HAproxy, Keepalived
+  import_playbook: playbooks/install_haproxy_keepalived.yml
+
+- name: Configure Loadbalancer
+  import_playbook: playbooks/configure_loadbalancer.yml
 
 - name: Install Kubernetes
   import_playbook: playbooks/install_kubernetes.yml
@@ -16,6 +19,9 @@
 
 - name: Join the master nodes
   import_playbook: playbooks/join_master.yml
+
+- name: Install Helm, Ingress controller
+  import_playbook: playbooks/install_helm_ing_controller.yml
 
 - name: Install Rancher
   import_playbook: playbooks/rancher_setup_updated.yml
