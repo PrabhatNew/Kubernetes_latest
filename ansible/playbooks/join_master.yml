@@ -23,3 +23,16 @@
   
    - name: Join Master Node to Cluster        
      shell: "{{ hostvars[groups['master'][0]]['master_join_token'].stdout_lines[0] }} --apiserver-advertise-address={{ ansible_host }}"
+
+- name: Make kubectl command workable on all masters   
+  hosts: master[1:] 
+  tasks:
+  - name: Create Kubernetes configuration directory for normal user
+    command: mkdir -p $HOME/.kube
+
+  - name: Copy admin configuration file for normal user
+    command: sudo -n cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
+
+  - name: Change user permission
+    shell: sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  
