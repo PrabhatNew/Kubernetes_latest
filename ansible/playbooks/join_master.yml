@@ -1,26 +1,25 @@
-- name: Generate and Execute Worker Join Token
+- name: Generate and Execute Worker Join Token  
   hosts: master[0]
-  gather_facts: false
+  gather_facts: false  
   become: true
 
-  tasks:
-  - name: Generate command 
+  tasks:   
+  - name: Generate command    
     shell: "echo $(kubeadm token create --print-join-command) --control-plane --certificate-key $(kubeadm init phase upload-certs --upload-certs | grep -vw -e certificate -e Namespace) 2>&1"
     register: master_join_token
 
   - name: Print Master Join Token
     debug:
       var: master_join_token.stdout_lines[0]
-
-- name: Execute Master Join Command on Master nodes except first master
-  hosts: master[1:]
-  become: true
-  become_user: root
-  tasks:
-
-  - name: Print Master Join Command
-    debug:
-      var: hostvars[groups['master'][0]]['master_join_token']
-
-  - name: Join Master Node to Cluster
-    shell: "{{ hostvars[groups['master'][0]]['master_join_token'] }}"
+        
+  
+- name: Execute Master Join Command on Master nodes except the first master    
+  hosts: master[1:]  
+  become: true    
+  tasks:       
+   - name: Print Master Join Command      
+     debug:
+       var: hostvars[groups['master'][0]]['master_join_token']
+  
+   - name: Join Master Node to Cluster        
+     shell: "{{ hostvars[groups['master'][0]]['master_join_token'].stdout_lines[0] }} --apiserver-advertise-address={{ ansible_host }}"
