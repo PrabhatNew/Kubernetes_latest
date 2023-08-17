@@ -3,5 +3,21 @@
   become: yes
   tasks:
     - name: reset the cluster
-      shell: kubeadm reset --force && rm -rf .kube/ && rm -rf /etc/kubernetes/ &&  rm -rf /var/lib/kubelet/ && rm -rf /var/lib/etcd && iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
-      ignore_errors: True
+      shell: |
+        kubeadm reset --force
+        systemctl stop kubelet
+        systemctl stop containerd
+        rm -rf /var/lib/cni/
+        rm -rf /var/lib/kubelet/*
+        rm -rf /etc/cni/
+        ifconfig cni0 down
+        ifconfig flannel.1 down
+        rm -rf .kube/
+        rm -rf /etc/kubernetes/
+        rm -rf /var/lib/kubelet/
+        rm -rf /var/lib/etcd
+        iptables -F
+        iptables -t nat -F
+        iptables -t mangle -F
+        iptables -X
+      ignore_errors: true
