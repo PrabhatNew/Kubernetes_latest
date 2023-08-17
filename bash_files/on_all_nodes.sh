@@ -34,9 +34,9 @@ rsa_file_location=~/.ssh/id_rsa
 echo -e "\n\nSystem Information:"
 echo -e "--------------------\n"
 
+echo "Hostname: $hostname"
 echo "IP Address: $ip"
 echo "Username: $username"
-echo "Hostname: $hostname"
 echo "RSA File Location: $rsa_file_location"
 
 echo -e "\n\n"
