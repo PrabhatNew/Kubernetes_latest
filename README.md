@@ -55,12 +55,13 @@ This repository contains Ansible playbooks and Bash scripts to set up a Kubernet
    ssh-copy-id desk@192.168.101.109
    ssh-copy-id desk@192.168.101.110
    ssh-copy-id desk@192.168.101.111
-   ```
+   ````
+
    Alternatively, you can use the `ssh-copy-id_automated.sh` script to automate this process:
    ````sh
    cd Kubernetes_latest/bash_files
    bash ssh-copy-id_automated.sh
-   ```
+   ````
 
 ## Usage
 To use the scripts in this repository, follow these steps:
