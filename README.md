@@ -116,7 +116,7 @@ To use the scripts in this repository, follow these steps:
      ansible-playbook -i hosts.ini playbooks/rancher_setup_updated.yml 
      ```
 4. To reset the cluster run this command:
-        ```sh
+     ```sh
      ansible-playbook -i hosts.ini playbooks/reset_cluster.yml 
      ```
 ## Troubleshooting
