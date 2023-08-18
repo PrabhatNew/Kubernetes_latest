@@ -35,12 +35,12 @@ This repository contains Ansible playbooks and Bash scripts to set up a Kubernet
    cd bash_files
    ````
 
-4. Run the `on_all_nodes.sh` script on all the nodes in your cluster to gather information about each individual node:
+4. Run the `on_all_k8s_nodes.sh` script on all the nodes in your cluster to gather information about each individual node:
    ````sh
-   bash on_all_nodes.sh
+   bash on_all_k8s_nodes.sh
    
 
-5. Execute the `hosts.ini.sh` script on your Ansible control node and enter the data gathered from the `on_all_nodes.sh` command to create the `hosts.ini` file:
+5. Execute the `hosts.ini.sh` script on your Ansible control node and enter the data gathered from the `on_all_k8s_nodes.sh` command to create the `hosts.ini` file:
    ````sh
    sudo bash hosts.ini.sh
    
