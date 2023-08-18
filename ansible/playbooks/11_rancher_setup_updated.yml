@@ -63,12 +63,14 @@
     - name: Mount NFS share
       mount:
         path: /etc/rancher_data
-        src: "{{ NFS_SERVER_IP }}:{{ NFS_PATH }}/etc/rancher_data"
+        src: "{{ NFS_SERVER_IP }}:{{ NFS_SERVER_PATH }}"
         fstype: nfs
-        opts: "rw,hard,intr"
+        opts: rw
+        state: mounted
 
     - name: Define docker-compose service for Rancher
       copy:
+        dest: /etc/docker-compose.yml
         content: |
           version: '2.2'
           services:
@@ -81,6 +83,7 @@
                 - /etc/rancher_data:/var/lib/rancher
                 - type: bind
                   source: /etc/rancher_data
+                  target: /etc/rancher_data
               environment:
                 - CATTLE_BOOTSTRAP_PASSWORD=1234567890
               ports:
@@ -92,7 +95,7 @@
           volumes:
             rancher_volume:
               driver: local
-            dest: /etc/docker-compose.yml
+            
 
     - name: Start docker-compose service for Rancher
       command: sudo docker compose -f /etc/docker-compose.yml up -d
