@@ -26,9 +26,14 @@
   hosts: loadbalancer
   become: true
   tasks:
-    - name: Add http block to haproxy.conf
+    - name: Ensure haproxy.cfg file exists
+      ansible.builtin.file:
+        path: /etc/haproxy/haproxy.cfg
+        state: touch
+
+    - name: Add http block to haproxy.cfg
       lineinfile:
-        path: /etc/haproxy/haproxy.conf
+        path: /etc/haproxy/haproxy.cfg
         insertafter: EOF
         line: |
           listen http
@@ -37,9 +42,9 @@
             server {{ host }} {{ hostvars[host]['ansible_host'] }}:{{ hostvars['loadbalancer']['ingress_nginx_controller_port_80'] }}
             {% endfor %}
 
-    - name: Add https block to haproxy.conf
+    - name: Add https block to haproxy.cfg
       lineinfile:
-        path: /etc/haproxy/haproxy.conf
+        path: /etc/haproxy/haproxy.cfg
         insertafter: EOF
         line: |
           listen https
@@ -48,9 +53,9 @@
             server {{ host }} {{ hostvars[host]['ansible_host'] }}:{{ hostvars['loadbalancer']['ingress_nginx_controller_port_443'] }}
             {% endfor %}
 
-    - name: Add stats block to haproxy.conf
+    - name: Add stats block to haproxy.cfg
       lineinfile:
-        path: /etc/haproxy/haproxy.conf
+        path: /etc/haproxy/haproxy.cfg
         insertafter: EOF
         line: |
           listen stats
@@ -58,7 +63,7 @@
             bind *:5000
             stats enable
             
-    handlers:
+  handlers:
     - name: Restart haproxy
       ansible.builtin.systemd:
         name: haproxy
