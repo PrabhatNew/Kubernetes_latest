@@ -52,9 +52,9 @@ This repository contains Ansible playbooks and Bash scripts to set up a Kubernet
 
 7. Copy the SSH public key from the Ansible control node to all other nodes in the cluster using the `ssh-copy-id` command:
    ````sh
-   ssh-copy-id desk@192.168.101.109
-   ssh-copy-id desk@192.168.101.110
-   ssh-copy-id desk@192.168.101.111
+   ssh-copy-id server1@192.168.101.109
+   ssh-copy-id server2@192.168.101.110
+   ssh-copy-id server3@192.168.101.111
    ````
 
    Alternatively, you can use the `ssh-copy-id_automated.sh` script to automate this process:
@@ -74,51 +74,61 @@ To use the scripts in this repository, follow these steps:
 
    **Note:** Do not run the `mainplaybook.yml` if the connection to all hosts has not passed. Instead, run the playbooks individually.
 
-2. To execute all playbooks at once, run the following command:
+2. You should modify the values of the 12_vars.yml file inside the /ansible/playbooks directory for the version of kubernetes you want to install, the value of floating_ip of loadbalancer, NFS_SERVER ip, NFS path.
+
+3. To execute all playbooks at once, run the following command:
    ````sh
    ansible-playbook -i hosts.ini mainplaybook.yml 
    
 
-3. To execute playbooks individually, run the following commands:
+4. To execute playbooks individually, run the following commands:
    - To install  HAProxy, Keepalived:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/install_haproxy_keepalived.yml
+     ansible-playbook -i hosts.ini playbooks/01_install_haproxy_keepalived.yml
      ```
    - To Configure HAProxy, Keepalived:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/configure_loadbalancer.yml
+     ansible-playbook -i hosts.ini playbooks/02_configure_loadbalancer.yml
      ```
    - To install Kubernetes:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/install_kubernetes.yml 
+     ansible-playbook -i hosts.ini playbooks/03_install_kubernetes.yml 
      ```
    - To initialize Kubernetes on the first master host:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/init_kubernetes.yml
+     ansible-playbook -i hosts.ini playbooks/04_init_kubernetes.yml
      ```
    - To join the worker nodes to the Kubernetes cluster:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/join_worker.yml 
+     ansible-playbook -i hosts.ini playbooks/05_join_worker.yml 
      ```
    - To join the master nodes to the Kubernetes cluster:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/join_master.yml 
+     ansible-playbook -i hosts.ini playbooks/06_join_master.yml 
      ```
    - To install nginx ingress controller and helm to the Kubernetes cluster:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/install_helm_ing_controller.yml 
+     ansible-playbook -i hosts.ini playbooks/07_install_helm_ing_controller.yml 
      ```
    - To update haproxy_conf file with ingress controller ports:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/update_HA_conf.yml 
+     ansible-playbook -i hosts.ini playbooks/08_update_HA_conf.yml 
+     ```
+   - To install NFS_SERVER:
+     ```sh
+     ansible-playbook -i hosts.ini playbooks/09_nfs_server.yml 
+     ```
+   - To install NFS_CLIENT:
+     ```sh
+     ansible-playbook -i hosts.ini playbooks/10_nfs_client.yml 
      ```
    - To install Rancher:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/rancher_setup_updated.yml 
+     ansible-playbook -i hosts.ini playbooks/11_rancher_setup_updated.yml 
      ```
 4. To reset the cluster run this command:
      ```sh
-     ansible-playbook -i hosts.ini playbooks/reset_cluster.yml 
+     ansible-playbook -i hosts.ini playbooks/13_reset_cluster.yml 
      ```
 ## Troubleshooting
 If you encounter any issues when using the playbook, try the following steps:

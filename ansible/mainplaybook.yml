@@ -3,25 +3,34 @@
   tags: automate
   tasks:
 - name: Install HAproxy, Keepalived
-  import_playbook: playbooks/install_haproxy_keepalived.yml
+  import_playbook: playbooks/01_install_haproxy_keepalived.yml
 
 - name: Configure Loadbalancer
-  import_playbook: playbooks/configure_loadbalancer.yml
+  import_playbook: playbooks/02_configure_loadbalancer.yml
 
 - name: Install Kubernetes
-  import_playbook: playbooks/install_kubernetes.yml
+  import_playbook: playbooks/03_install_kubernetes.yml
 
 - name: Initialize Kubernetes on first master
-  import_playbook: playbooks/init_kubernetes.yml
+  import_playbook: playbooks/04_init_kubernetes.yml
 
 - name: Join the worker nodes
-  import_playbook: playbooks/join_worker.yml
+  import_playbook: playbooks/05_join_worker.yml
 
 - name: Join the master nodes
-  import_playbook: playbooks/join_master.yml
+  import_playbook: playbooks/06_join_master.yml
 
 - name: Install Helm, Ingress controller
-  import_playbook: playbooks/install_helm_ing_controller.yml
+  import_playbook: playbooks/07_install_helm_ing_controller.yml
 
-- name: Install Rancher
-  import_playbook: playbooks/rancher_setup_updated.yml
+#- name: Update HAPROXY configuration
+#  import_playbook: playbooks/08_update_HA_conf.yml
+
+#- name: Install NFS_SERVER
+#  import_playbook: playbooks/09_nfs_server.yml
+
+#- name: Install NFS_CLIENT
+#  import_playbook: playbooks/10_nfs_client.yml
+
+#- name: Install Rancher
+#  import_playbook: playbooks/11_rancher_setup_updated.yml

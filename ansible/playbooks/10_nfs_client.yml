@@ -1,0 +1,31 @@
+---
+- name: Install and configure NFS client on Ubuntu 22.04
+  hosts: nfs_client
+  become: true
+  vars_files:
+    - 12_vars.yml
+
+  tasks:
+    - name: Update system packages
+      apt:
+        update_cache: yes
+
+    - name: Install NFS client
+      apt:
+        name: nfs-common
+        state: present
+
+    - name: Create mount point
+      file:
+        path: "{{ NFS_CLIENT_PATH }}"
+        state: directory
+
+    - name: Mount NFS share
+      mount:
+        path: "{{ NFS_CLIENT_PATH }}"
+        src: "{{ NFS_SERVER_IP }}:{{ NFS_SERVER_PATH }}"
+        fstype: nfs
+        opts: rw
+        state: mounted
+      #vars:
+     #   nfs_server: "192.168.101.141"  # Change this to the IP address or hostname of your NFS server

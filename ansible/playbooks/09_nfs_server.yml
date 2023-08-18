@@ -1,0 +1,57 @@
+- name: Install and configure NFS server on Ubuntu 22.04
+  hosts: nfs_server
+  become: true
+  vars_files:
+    - 12_vars.yml
+
+  tasks:
+    - name: Update system packages
+      apt:
+        update_cache: yes
+
+    - name: Install NFS server
+      apt:
+        name: nfs-kernel-server
+        state: present
+
+    - name: Create shared NFS directory
+      file:
+        path: "{{ NFS_SERVER_PATH }}"
+        state: directory
+
+    - name: Set directory permissions
+      file:
+        path: "{{ NFS_SERVER_PATH }}"
+        owner: nobody
+        group: nogroup
+        mode: '0777'
+        recurse: yes
+
+    - name: Grant NFS access
+      lineinfile:
+        path: /etc/exports
+        line: "{{ NFS_SERVER_PATH }} {{ nfs_clients_subnet }}(rw,sync,no_subtree_check,no_root_squash,no_acl)"
+      vars:
+        nfs_clients_subnet: "*"  # Change this to the appropriate subnet or IP range of your NFS clients
+
+    - name: Export NFS directory
+      shell: exportfs -a
+
+    - name: Restart NFS server
+      service:
+        name: nfs-kernel-server
+        state: restarted
+
+    # - name: Allow NFS through firewall
+    #   ufw:
+    #     rule: allow
+    #     #proto: nfs
+    #     from_ip: "*"
+    #     to_port: nfs
+
+    # - name: Enable firewall
+    #   ufw:
+    #     state: enabled
+
+    # - name: Check firewall status
+    #   command: ufw status

@@ -1,13 +1,15 @@
 - name: Init on first master
   hosts: master[0]
   become: yes
+  vars_files:
+    - 12_vars.yml
   tasks:
     - name: Get master IP address
       set_fact:
         master_ip: "{{ hostvars[groups['master'][0]]['ansible_host'] }}"
 
     - name: Initialize Kubernetes control plane
-      command: "kubeadm init --control-plane-endpoint={{ hostvars[groups['floating_ip'][0]]['ansible_host'] }}:6443 --upload-certs --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address={{ hostvars[groups['master'][0]]['ansible_host'] }} --v=5"
+      command: "kubeadm init --control-plane-endpoint={{ FLOATING_IP }}:6443 --upload-certs --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address={{ hostvars[groups['master'][0]]['ansible_host'] }} --v=5"
       args:
         creates: /etc/kubernetes/admin.conf
       register: kubeadm_init

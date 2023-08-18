@@ -2,7 +2,7 @@
 - hosts: loadbalancer
   become: yes
   vars_files:
-    - 04-vars.yml
+    - 12_vars.yml
   tasks:
     - name: check_apiserver
       copy:
@@ -16,8 +16,8 @@
           }
 
           curl --silent --max-time 2 --insecure https://localhost:6443/ -o /dev/null || errorExit "Error GET https://localhost:6443/"
-          if ip addr | grep -q {{ hostvars[groups['floating_ip'][0]]['ansible_host'] }}; then
-            curl --silent --max-time 2 --insecure https://{{ hostvars[groups['floating_ip'][0]]['ansible_host'] }}:6443/ -o /dev/null || errorExit "Error GET https://{{ hostvars[groups['floating_ip'][0]]['ansible_host'] }}:6443/"
+          if ip addr | grep -q {{ FLOATING_IP }}; then
+            curl --silent --max-time 2 --insecure https://{{ FLOATING_IP }}:6443/ -o /dev/null || errorExit "Error GET https://{{ FLOATING_IP }}:6443/"
           fi
 
     - name: make script executable
@@ -54,13 +54,13 @@
             option ssl-hello-chk
             balance roundrobin
           {% for host in groups['master'] %}
-            server master{{ loop.index }} {{ hostvars[host]['ansible_host'] }}:6443 check fall 3 rise 2
+          server {{ hostvars[host]['inventory_hostname'] }} {{ hostvars[host]['ansible_host'] }}:6443 check fall 3 rise 2
           {% endfor %}
 
 - hosts: loadbalancer[0]
   become: yes
   vars_files:
-    - 04-vars.yml
+    - 12_vars.yml
   tasks:
     - name: keepalived
       copy:
@@ -77,7 +77,7 @@
           
           vrrp_instance VI_1 {
               state MASTER
-              interface eth1
+              interface enp0s3
               virtual_router_id 1
               priority 101
               advert_int 5
@@ -86,7 +86,7 @@
                   auth_pass {{ PASSWORD_KEEPALIVED }}
               }
               virtual_ipaddress {
-                  {{ hostvars[groups['floating_ip'][0]]['ansible_host'] }}
+                  {{ FLOATING_IP }}
               }
               track_script {
                   check_apiserver
@@ -96,7 +96,7 @@
 - hosts: loadbalancer[1]
   become: yes
   vars_files:
-    - 04-vars.yml
+    - 12_vars.yml
   tasks:
     - name: keepalived
       copy:
@@ -113,7 +113,7 @@
 
           vrrp_instance VI_1 {
               state BACKUP
-              interface eth1
+              interface enp0s3
               virtual_router_id 1
               priority 100
               advert_int 5
@@ -122,7 +122,7 @@
                   auth_pass {{ PASSWORD_KEEPALIVED }}
               }
               virtual_ipaddress {
-                  {{ hostvars[groups['floating_ip'][0]]['ansible_host'] }}
+                  {{ FLOATING_IP }}
               }
               track_script {
                   check_apiserver

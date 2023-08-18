@@ -1,7 +1,7 @@
 - hosts: rancher
   become: true
   vars_files:
-    - 04-vars.yml
+    - 12_vars.yml
 
   tasks:
     - name: Install aptitude

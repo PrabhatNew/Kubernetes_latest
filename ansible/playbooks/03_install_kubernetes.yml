@@ -2,7 +2,7 @@
 - hosts: master,worker
   become: yes
   vars_files:
-    - 04-vars.yml
+    - 12_vars.yml
   tasks:
     - name: Disable swap
       become: yes
@@ -125,11 +125,16 @@
     - name: Hold versions
       shell: apt-mark hold kubelet={{ K8S_VERSION }} kubeadm={{ K8S_VERSION }}
 
+    - name: Install NFS client package
+      package:
+        name: nfs-common
+        state: present
+
 
 - hosts: master
   become: yes
   vars_files:
-    - 04-vars.yml
+    - 12_vars.yml
   tasks:
     - name: install kubectl
       apt:
