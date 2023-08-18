@@ -16,7 +16,7 @@ This repository contains Ansible playbooks and Bash scripts to set up a Kubernet
 - The ansible control node (where you'll run the Ansible commands) must be able to SSH to all the nodes without a password. This can be done by generating SSH keys and copying the public key to all the nodes.
 
 ## Installation
-1. Clone the repository to your Ansible controller (local machine) and to all the nodes in the cluster using the following command:
+1. Clone the repository to your Ansible controller (local machine) and to all the kubernetes nodes using the following command:
    `````sh
    sudo git clone https://github.com/PrabhatNew/Kubernetes_latest.git
    
@@ -73,7 +73,7 @@ To use the scripts in this repository, follow these steps:
 
    **Note:** Do not run the `mainplaybook.yml` if the connection to all hosts has not passed. Instead, run the playbooks individually.
 
-2. You should modify the values of the 12_vars.yml file inside the /ansible/playbooks directory for the version of kubernetes you want to install, the value of floating_ip of loadbalancer, NFS_SERVER ip, NFS path.
+2. You should modify the values of the 12_vars.yml file inside the /ansible/playbooks directory for the version of kubernetes you want to install, the value of floating_ip of loadbalancer, NFS_SERVER IP, NFS path.
 
 3. To execute all playbooks at once, run the following command:
    ````sh
@@ -129,7 +129,7 @@ To use the scripts in this repository, follow these steps:
      ```sh
      ansible-playbook -i hosts.ini playbooks/11_rancher_setup_updated.yml 
      ```
-4. To reset the cluster run this command:
+5. To reset the cluster run this command:
      ```sh
      ansible-playbook -i hosts.ini playbooks/13_reset_cluster.yml 
      ```
@@ -141,7 +141,7 @@ If you encounter any issues when using the playbook, try the following steps:
 - Check the status of the Kubernetes cluster using the `kubectl get nodes` command.
 - Read the error messages and search for solutions online.
 
-If you are unable to resolve the issue, please contact the project owner for assistance.
+If you are unable to resolve the issue, please contact  https://www.linkedin.com/in/prabhat-neupane-426779170 for assistance.
 
 ## License
 This project is licensed under the MIT License. See the `LICENSE` file for details.
