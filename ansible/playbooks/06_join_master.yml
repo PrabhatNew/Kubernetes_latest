@@ -36,27 +36,4 @@
   - name: Change user permission
     shell: sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-- name: Resolve cni0 error   
-  hosts: master, worker
-  become: true    
-  tasks:       
-    - name: Set cni0 and flannel.1 links down
-      shell: |
-        ip link set cni0 down
-        ip link set flannel.1 down
-
-    - name: Delete cni0 and flannel.1 links
-      shell: |
-        ip link delete cni0
-        ip link delete flannel.1
-
-    - name: Restart containerd
-      service:
-        name: containerd
-        state: restarted
-
-    - name: Restart kubelet
-      service:
-        name: kubelet
-        state: restarted
   
